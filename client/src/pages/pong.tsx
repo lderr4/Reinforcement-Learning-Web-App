@@ -29,35 +29,18 @@ const Pong: NextPage = () => {
         retryOnError: true,
         shouldReconnect: () => true
     });
-
-    /*
-    const [wsInstance, setWsInstance] = useState(null);
-
-    // Call when updating the ws connection
-    const updateWs = useCallback((url) => {
-        if (!browser) return setWsInstance(null);
-
-        // Close the old connection
-        if (wsInstance?.readyState !== 3)
-            wsInstance.close(...);
-
-        // Create a new connection
-        const newWs = new WebSocket(url);
-        setWsInstance(newWs);
-    }, [wsInstance]) */ 
-
+    const [guess, setGuess] = useState('');
+    let allGuesses = Object.values(lastJsonMessage?.data.editorContent || []);
 
     useEffect(() => {
-        if (username && readyState === ReadyState.OPEN) {
+        if (readyState === ReadyState.OPEN) {
             sendJsonMessage({
                 username,
                 type: "userstatus"
             });
         }
-    }, [username, sendJsonMessage, readyState]);
+    }, [sendJsonMessage, readyState]);
 
-    const [guess, setGuess] = useState('');
-    let allGuesses = Object.values(lastJsonMessage?.data.editorContent || []);
 
     function handleGuess(e) {
         e.preventDefault;
@@ -67,22 +50,6 @@ const Pong: NextPage = () => {
         });
         console.log("guess sent");
     }
-
-
-    /*
-    // (Optional) Open a connection on mount
-    useEffect(() => {
-        if (isBrowser) {
-            const ws = new WebSocket(...);
-            setWsInstance(ws);
-        }
-
-        return () => {
-            // Cleanup on unmount if ws wasn't closed already
-            if (ws?.readyState !== 3)
-                ws.close(...)
-        }
-    }, []) */ 
 
     return (
         <>
