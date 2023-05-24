@@ -7,11 +7,13 @@ module.exports = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
+        colors: {
+            'r1-brown': '#6F5643',
+            'r1-red': '#CC6B49',
+            'r1-orange': '#D2A24C',
+            'r1-white': '#ECE6C2',
+            'r1-blue': '#73BDA8',
+        },
     },
   },
   plugins: [],
