@@ -1,5 +1,7 @@
+import { WebSocketDemo } from './websockets';
+
 export default function Pong() {
     return <>
-        <h1>yo</h1>
+        <WebSocketDemo/>
     </>
 }
