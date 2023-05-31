@@ -1,1 +1,4 @@
 sessionize
+
+# Local Netlify folder
+.netlify
