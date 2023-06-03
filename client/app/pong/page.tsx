@@ -1,7 +1,11 @@
-import { WebSocketDemo } from './websockets';
+
+
+import { Threejs } from './websockets';
 
 export default function Pong() {
-    return <>
-        <WebSocketDemo/>
-    </>
+    return (
+        <div className='w-[640px] h-[480px] '>
+            <Threejs/>
+        </div>
+    )
 }

@@ -1,54 +1,37 @@
-//'use client';
+'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import * as THREE from 'three'
+import React, { useRef, useState } from 'react'
+import { Canvas, useFrame, ThreeElements } from '@react-three/fiber'
 
-export function WebSocketDemo() {
-  //Public API that will echo messages sent to it back to the client
-  const [socketUrl, setSocketUrl] = useState('wss://echo.websocket.org');
-  const [messageHistory, setMessageHistory] = useState([]);
-
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
-
-  useEffect(() => {
-    if (lastMessage !== null) {
-      setMessageHistory((prev) => prev.concat(lastMessage));
-    }
-  }, [lastMessage, setMessageHistory]);
-
-  const handleClickChangeSocketUrl = useCallback(
-    () => setSocketUrl('wss://demos.kaazing.com/echo'),
-    []
-  );
-
-  const handleClickSendMessage = useCallback(() => sendMessage('Hello'), []);
-
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: 'Connecting',
-    [ReadyState.OPEN]: 'Open',
-    [ReadyState.CLOSING]: 'Closing',
-    [ReadyState.CLOSED]: 'Closed',
-    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-  }[readyState];
-
+function Box(props: ThreeElements['mesh']) {
+  const mesh = useRef<THREE.Mesh>(null!)
+  const [hovered, setHover] = useState(false)
+  const [active, setActive] = useState(false)
+  useFrame((state, delta) => (mesh.current.rotation.x += delta))
   return (
-    <div>
-      <button onClick={handleClickChangeSocketUrl}>
-        Click Me to change Socket Url
-      </button>
-      <button
-        onClick={handleClickSendMessage}
-        disabled={readyState !== ReadyState.OPEN}
-      >
-        Click Me to send 'Hello'
-      </button>
-      <span>The WebSocket is currently {connectionStatus}</span>
-      {lastMessage ? <span>Last message: {lastMessage.data}</span> : null}
-      <ul>
-        {messageHistory.map((message, idx) => (
-          <span key={idx}>{message ? message.data : null}</span>
-        ))}
-      </ul>
-    </div>
-  );
-};
+    <mesh
+      {...props}
+      ref={mesh}
+      scale={active ? 1.5 : 1}
+      onClick={(event) => setActive(!active)}
+      onPointerOver={(event) => setHover(true)}
+      onPointerOut={(event) => setHover(false)}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
+    </mesh>
+  )
+}
+
+export function Threejs() {
+    return (
+      <>
+          <Canvas>
+            <ambientLight />
+            <pointLight position={[10, 10, 10]} />
+            <Box position={[-1.2, 0, 0]} />
+            <Box position={[1.2, 0, 0]} />
+          </Canvas>
+      </>
+  )
+}
