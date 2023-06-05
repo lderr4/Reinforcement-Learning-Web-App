@@ -10,7 +10,7 @@ export default function Pong() {
     return (
       <>
         <div className='w-[640px] h-[480px] '>
-          <Canvas>
+          <Canvas className=''>
             <Threejs/>
           </Canvas>
         </div>
