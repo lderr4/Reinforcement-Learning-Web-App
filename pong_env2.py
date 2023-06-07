@@ -52,7 +52,7 @@ class PongEnv(gym.Env):
         self.ball_radius = 10
         self.paddle_width = 15
         self.paddle_height = 60
-        self.paddle_speed = 25
+        self.paddle_speed = 30
 
         self.ball_pos = [self.screen_height // 2,
                          self.screen_width // 2]  # center of screen
@@ -61,7 +61,8 @@ class PongEnv(gym.Env):
                            self.paddle_height // 2, 10]  # top right
 
         # random number between 2 and 4 in x and y direction
-        self.ball_vel = np.random.uniform(80, 120, size=2).tolist()
+        self.ball_vel = np.random.uniform(20, 30, size=2).tolist()
+        self.ball_vel[1] *= -1
 
         # cpu speed slightly slower than ball
         cpu_speed = 0.95 * self.ball_vel[0]
@@ -92,6 +93,7 @@ class PongEnv(gym.Env):
 
         self.ball_pos = [self.screen_height // 2, self.screen_width // 2]
         self.ball_vel = np.random.uniform(20, 30, size=2).tolist()
+        self.ball_vel[1] *= -1
         self.paddle_pos = [self.screen_height // 2 -
                            self.paddle_height // 2, 10]  # top right
         cpu_speed = 0.95 * self.ball_vel[0]
@@ -128,17 +130,34 @@ class PongEnv(gym.Env):
         # Check for collision with paddles
         if self.ball_pos[1] <= self.paddle_pos[1] + self.paddle_width and self.paddle_pos[0] <= self.ball_pos[0] <= self.paddle_pos[0] + self.paddle_height:
             self.ball_vel[1] = -self.ball_vel[1]
+            reward = 1
 
         if self.ball_pos[1] >= cpu_pos[1] and cpu_pos[0] <= self.ball_pos[0] <= cpu_pos[0] + self.paddle_height:
             self.ball_vel[1] = -self.ball_vel[1]
 
         # Check for ball out of bounds
+        y = self.paddle_pos[0] - 30
         if self.ball_pos[1] <= 0:
             done = True
-            reward = -1
-        elif self.ball_pos[0] >= self.screen_width:
+            reward = -1 + 45 / abs(y - self.ball_pos[0])
+
+        elif self.ball_pos[1] >= self.screen_width:
             done = True
             reward = 1
+        exploration_reward_chance = np.random.rand()
+
+        if exploration_reward_chance < 0.2 and reward != 0:  # 5 % chance to get a reward for exploring
+            if y < 100 or y > 380:
+                reward += 0.05  # reward the paddle for exploring
+            elif y < 120 or y > 360:
+                reward += 0.04
+            elif y < 140 or y > 340:
+                reward += 0.03
+            elif y < 160 or y > 320:
+                reward += 0.02
+            elif y < 180 or y > 300:
+                reward += 0.01
+
         self.update_screen()
 
         return self.screen, reward, done, {}  # 0 is screen

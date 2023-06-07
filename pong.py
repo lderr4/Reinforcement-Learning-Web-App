@@ -94,7 +94,7 @@ def discount_rewards(r, gamma):  # idea
 
 def get_model():
     model = Sequential()
-    model.add(Dense(units=150,
+    model.add(Dense(units=200,
                     input_dim=48*64,
                     activation='relu',
                     kernel_initializer='glorot_uniform'))
@@ -109,112 +109,128 @@ def get_model():
     return model
 
 
-# gym initialization
+def train():
+    # gym initialization
 
-env = PongEnv()
-observation = env.reset()
-prev_input = None
+    env = PongEnv()
+    observation = env.reset()
+    prev_input = None
 
-# show_preprocess(env)
-# Declaring the two actions that can happen in Pong for an agent, move up or move down
-# Decalring 0 means staying still. Note that this is pre-defined specific to package.
-UP_ACTION = 1
-DOWN_ACTION = 2
-# Hyperparameters. Gamma here allows you to measure the effect of future events
-gamma = 0.99
-# initialization of variables used in the main loop
-x_train, y_train, rewards = [], [], []
-reward_sum = 0
-episode_num = 0
+    # show_preprocess(env)
+    # Declaring the two actions that can happen in Pong for an agent, move up or move down
+    # Decalring 0 means staying still. Note that this is pre-defined specific to package.
+    UP_ACTION = 1
+    DOWN_ACTION = 2
+    # Hyperparameters. Gamma here allows you to measure the effect of future events
+    gamma = 0.99
+    # initialization of variables used in the main loop
+    x_train, y_train, rewards = [], [], []
+    reward_sum = 0
+    episode_num = 0
+
+    history = []
+    observation = env.reset()  # initialize to first frame
+    prev_input = None
+
+    model = get_model()
+    filepath = 'model.h5'
+    # model = load_model(filepath)
+
+    checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1)
+    callbacks_list = [checkpoint]
+
+    num_games = 0
+    frame_count = 0
+    wins = 0
+
+    # fig, ax = plt.subplots()
+    # ims = []
+    while (True):
+        start = time.process_time()
+
+        episode_done = False
+
+        cur_input = prepro(observation)  # frame preprocessed
+
+        x = cur_input - \
+            prev_input if prev_input is not None else np.zeros(48 * 64)
+
+        prev_input = cur_input
+
+        x = np.expand_dims(x, axis=1).T
+
+        end = time.process_time()
+        obs_time = end - start
+
+        start = time.process_time()
+        prob = model.predict(x, verbose=False)
+        end = time.process_time()
+        model_pred = end-start
+        # The neural net returns a probability
+        action = UP_ACTION if np.random.uniform() < prob else DOWN_ACTION
+
+        # converting between output of neural net and up/down action
+        y = 1 if action == 2 else 0
+
+        x_train.append(x)
+        y_train.append(y)
+        start = time.process_time()
+        observation, reward, done, info = env.step(action)
+        if reward == 1:
+            wins += 1
+
+        # if frame_count == 0:
+        #     im = plt.imshow(observation)
+        # else:
+        #     im = plt.imshow(observation, animated=True)
+        # ims.append([im])
+
+        rewards.append(reward)
+        frame_count += 1
+        end = time.process_time()
+
+        if done:
+            prev_input = None
+            observation = env.reset()
+            num_games += 1
+            print(num_games, frame_count, reward, end="\r")
+
+            # ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+            #                                 repeat_delay=1000)
+            plt.show()
+            if num_games == 21:
+                episode_done = True
+                num_games = 0
+
+        if episode_done:  # episode finished after 21 games are won by either player
+            reward_sum = np.sum(rewards)
+            history.append(reward_sum)
+            print("Episode Number: ", episode_num, "| Total Reward: ",
+                  reward_sum, " | AVG Frames: ", frame_count / 21, "wins:", wins)
+            frame_count = 0
+            wins = 0
+            # x: image arrays, y=action performed, weights:
+
+            disc = discount_rewards(rewards, gamma)
+            print(disc)
+
+            model.fit(x=np.vstack(x_train),
+                      y=np.vstack(y_train),
+                      sample_weight=disc,
+                      verbose=0, callbacks=callbacks_list)
+
+            x_train, y_train, rewards = [], [], []
+            observation = env.reset()
+
+            episode_num += 1
+            prev_input = None
+# stuff to run always here such as class/def
 
 
-history = []
-observation = env.reset()  # initialize to first frame
-prev_input = None
+def main():
+    train()
 
-model = get_model()
 
-filepath = 'model.h5'
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1)
-callbacks_list = [checkpoint]
-
-num_games = 0
-frame_count = 0
-
-fig, ax = plt.subplots()
-ims = []
-while (True):
-    start = time.process_time()
-
-    episode_done = False
-
-    cur_input = prepro(observation)  # frame preprocessed
-
-    x = cur_input - prev_input if prev_input is not None else np.zeros(48 * 64)
-
-    prev_input = cur_input
-
-    x = np.expand_dims(x, axis=1).T
-
-    end = time.process_time()
-    obs_time = end - start
-
-    start = time.process_time()
-    prob = model.predict(x, verbose=False)
-    end = time.process_time()
-    model_pred = end-start
-    # The neural net returns a probability
-    action = UP_ACTION if np.random.uniform() < prob else DOWN_ACTION
-
-    # converting between output of neural net and up/down action
-    y = 1 if action == 2 else 0
-
-    x_train.append(x)
-    y_train.append(y)
-    start = time.process_time()
-    observation, reward, done, info = env.step(action)
-
-    # if frame_count == 0:
-    #     im = plt.imshow(observation)
-    # else:
-    #     im = plt.imshow(observation, animated=True)
-    # ims.append([im])
-
-    rewards.append(reward)
-    frame_count += 1
-    end = time.process_time()
-
-    if done:
-        prev_input = None
-        observation = env.reset()
-        num_games += 1
-        print(num_games, frame_count, reward, end="\r")
-        frame_count = 0
-        # ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
-        #                                 repeat_delay=1000)
-        # plt.show()
-        if num_games == 21:
-            episode_done = True
-            num_games = 0
-
-    if episode_done:  # episode finished after 21 games are won by either player
-        reward_sum = np.sum(rewards)
-        history.append(reward_sum)
-        print("Episode Number: ", episode_num, "| Total Reward: ", reward_sum)
-        print(rewards)
-
-        # x: image arrays, y=action performed, weights:
-
-        disc = discount_rewards(rewards, gamma)
-        print(disc)
-
-        model.fit(x=np.vstack(x_train),
-                  y=np.vstack(y_train),
-                  sample_weight=disc,
-                  verbose=0, callbacks=callbacks_list)
-
-        x_train, y_train, rewards = [], [], []
-        observation = env.reset()
-
-        episode_num += 1
-        prev_input = None
+if __name__ == "__main__":
+    # stuff only to run when not called via 'import' here
+    main()
