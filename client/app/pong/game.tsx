@@ -24,9 +24,9 @@ export function Comp() {
             ref={mesh}
             name='cpu'
             scale={1}
-            position={[-5, 0, 0]}>
-            <boxGeometry args={[0.2, 1, 0.2]} />
-            <meshStandardMaterial color={'orange'} />
+            position={[-4.75, 0, 0]}>
+            <boxGeometry args={[0.2, 1, 0]} />
+            <meshStandardMaterial color={'#73BDA8'} />
         </mesh>
     )
 }
@@ -46,9 +46,9 @@ export function Player() {
             ref={mesh}
             name='player'
             scale={1}
-            position={[5, 0, 0]}>
-            <boxGeometry args={[0.2, 1, 0.2]} />
-            <meshStandardMaterial color={'orange'} />
+            position={[4.75, 0, 0]}>
+            <boxGeometry args={[0.2, 1, 0]} />
+            <meshStandardMaterial color={'#73BDA8'} />
         </mesh>
     )
 }
@@ -70,7 +70,7 @@ export function Ball() {
     const height = useMemo(() => 2 * Math.tan( vFOV / 2 ) * 5, [vFOV])
     const width = useMemo(() => height * (sizes.width / sizes.height), [height])
     
-    useFrame(({ clock, viewport, camera }) => {
+    useFrame(({ clock }) => {
         const a = Math.trunc(clock.getElapsedTime() * 1000);
         // player paddle
         if (ball.current.position.x >= playerPosRef.current.x - 0.15 &&
@@ -109,7 +109,7 @@ export function Ball() {
             scale={1}
             position={[0, 0, 0]}>
             <circleGeometry args={[0.15, 32, 1]} />
-            <meshStandardMaterial color={'orange'} />
+            <meshStandardMaterial color={'#73BDA8'} />
         </mesh>
     )
 }
