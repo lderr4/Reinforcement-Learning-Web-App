@@ -1,148 +1,116 @@
-'use client';
+import * as THREE from 'three';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { useFrame, useThree, ThreeElements } from '@react-three/fiber';
 
-import * as THREE from 'three'
-import React, { useRef, useState, useEffect } from 'react'
-import { Canvas, useFrame, useThree, ThreeElements } from '@react-three/fiber'
+import { useCPUStore, usePlayerStore, sizes } from "./store";
 
-function CPU(props: ThreeElements['mesh']) {
-    const mesh = useRef<THREE.Mesh>(null!)
-    const [hovered, setHover] = useState(false)
-    const [active, setActive] = useState(false)
-
-    const gls = useThree((state) => state.gl);
-    const gl = gls.domElement.getContext("webgl2");
-    const pixels = new Uint8Array(
-        gl.drawingBufferWidth * gl.drawingBufferHeight * 4
-    );
+export function Comp() {
+    const mesh = useRef<THREE.Mesh>(null!);
     let tick = 0;
 
-    console.log(gl);
-    console.log([gl.drawingBufferWidth, gl.drawingBufferHeight]);
+    // TODO: set framerate for capture
+    useFrame(({ clock, gl }) => {
+        // CAPTURE EACH FRAME
+        const cav = gl.domElement;
+        const base64 = cav.toDataURL("img/png");
+        //console.log(base64);
 
-    useFrame(({ clock }) => {
-        const a = clock.getElapsedTime();
-
-        if (tick !== Math.floor(a * 10 % 10)) {
-            tick = Math.floor(a * 10 % 10);
-            gl.readPixels(
-                0,
-                0,
-                gl.drawingBufferWidth,
-                gl.drawingBufferHeight,
-                gl.RGBA,
-                gl.UNSIGNED_BYTE,
-                pixels
-            );
-            //console.log(pixels); // Uint8Array
-            //console.log(a);
-        }
+        //const a = clock.getElapsedTime();
+        //tick = a;
     });
 
     return (
         <mesh
-            {...props}
             ref={mesh}
-            scale={active ? 1.5 : 1}
-            onClick={(event) => setActive(!active)}
-            onPointerOver={(event) => setHover(true)}
-            onPointerOut={(event) => setHover(false)}>
+            name='cpu'
+            scale={1}
+            position={[-5, 0, 0]}>
             <boxGeometry args={[0.2, 1, 0.2]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
+            <meshStandardMaterial color={'orange'} />
         </mesh>
     )
 }
 
-function Player(props: ThreeElements['mesh']) {
-    const mesh = useRef<THREE.Mesh>(null!)
-    const [hovered, setHover] = useState(false)
-    const [active, setActive] = useState(false)
-
-
-    const viewport = useThree((state) => state.viewport)
-    useFrame((state) => {
-        mesh.current.position.setY((state.mouse.y * viewport.height) / 2);
-        mesh.current.updateMatrixWorld();
-    })
-
-    return (
-        <mesh
-            {...props}
-            ref={mesh}
-            scale={active ? 1.5 : 1}
-            onClick={(event) => setActive(!active)}
-            onPointerOver={(event) => setHover(true)}
-            onPointerOut={(event) => setHover(false)}>
-            <boxGeometry args={[0.2, 1, 0.2]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
-        </mesh>
-    )
-}
-
-function Ball(props: ThreeElements['mesh']) {
+export function Player() {
+    const store = usePlayerStore();
     const mesh = useRef<THREE.Mesh>(null!);
-    const [hovered, setHover] = useState(false);
-    const [active, setActive] = useState(false);
+    const viewport = useThree((state) => state.viewport);
+
+    useFrame(({ mouse }) => {
+        mesh.current.position.y = (mouse.y * viewport.height) / 2;
+        store.change(mesh.current.position);
+    });
 
     return (
         <mesh
-            {...props}
             ref={mesh}
-            scale={active ? 1.5 : 1}
-            onClick={(event) => setActive(!active)}
-            onPointerOver={(event) => setHover(true)}
-            onPointerOut={(event) => setHover(false)}>
-            <circleGeometry args={[0.15, 32, 1]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
+            name='player'
+            scale={1}
+            position={[5, 0, 0]}>
+            <boxGeometry args={[0.2, 1, 0.2]} />
+            <meshStandardMaterial color={'orange'} />
         </mesh>
     )
 }
 
-export function Threejs() {
-    const [velocity, setVelocity] = useState([0.01, 0]);
-    const [ballPos, setBall] = useState(new THREE.Vector3(0, 0, 0));
-    const [cpuPos, setCpu] = useState(new THREE.Vector3(-5, 0, 0));
-    const [playerPos, setPlayer] = useState(new THREE.Vector3(5, 0, 0));
-
+export function Ball() {
+    const ball = useRef<THREE.Mesh>(null!);
+    const velocity = [0.002, 0];
     let tick = 0;
+    const cpuPosRef = useRef(useCPUStore.getState().paddlePos);
+    const playerPosRef = useRef(usePlayerStore.getState().paddlePos);
+    // Connect to the store on mount, disconnect on unmount, catch state-changes in a reference
+    useEffect(() => useCPUStore.subscribe(state => (cpuPosRef.current = state.paddlePos)), []);
+    useEffect(() => usePlayerStore.subscribe(state => (playerPosRef.current = state.paddlePos)), []);
 
-    useFrame(({ clock }) => {
-        const a = clock.getElapsedTime();
+    //var vFOV = THREE.MathUtils.degToRad( 75 ); // convert vertical fov to radians
+    //var height = 2 * Math.tan( vFOV / 2 ) * 5; // visible height
+    //var width = height * (sizes.width / sizes.height); // visible width
+    const vFOV = useMemo(() => THREE.MathUtils.degToRad( 75 ), [])
+    const height = useMemo(() => 2 * Math.tan( vFOV / 2 ) * 5, [vFOV])
+    const width = useMemo(() => height * (sizes.width / sizes.height), [height])
+    
+    useFrame(({ clock, viewport, camera }) => {
+        const a = Math.trunc(clock.getElapsedTime() * 1000);
+        // player paddle
+        if (ball.current.position.x >= playerPosRef.current.x - 0.15 &&
+            ball.current.position.y < playerPosRef.current.y + 1 &&
+            ball.current.position.y > playerPosRef.current.y - 1) {
+            console.log("player paddle");
+            velocity[0] = velocity[0] * -1.1;
+            velocity[1] = velocity[1] + (ball.current.position.y - playerPosRef.current.y) * 0.004;
+        }
+        // cpu paddle
+        if (ball.current.position.x <= cpuPosRef.current.x + 0.15 &&
+            ball.current.position.y < cpuPosRef.current.y + 1 &&
+            ball.current.position.y > cpuPosRef.current.y - 1) {
+            console.log("cpu paddle");
+            velocity[0] = velocity[0] * -1.1;
+            velocity[1] = velocity[1] + (ball.current.position.y - cpuPosRef.current.y) * 0.004;
+        }
+        // walls
+        if (ball.current.position.y > height / 2 || ball.current.position.y < (height / 2) * -1) {
+            velocity[1] = velocity[1] * -1;
+        } else if (ball.current.position.x > 5.15) {
+            console.log("cpu scores!");
+        } else if (ball.current.position.x < -5.15) {
+            console.log("player scores!");
+        }
 
-        // check collision
-
-        //if (ballPos.x <= playerPos.x && (ballPos.y < playerPos.y + 1 || ballPos.y > playerPos.y - 1)) {
-          //  velocity[0] = velocity[0] * -1;
-        //}
-
-
-
-
-        // moveball
-
-        //console.log(`x velocity: 2  t1: ${tick}  t2: ${a}   movement: ${(Math.trunc(tick * 1000) / 1000 - Math.trunc(a * 1000) / 1000) * 2}`);
-        //console.log(ballPos[0] - ((Math.trunc(tick * 1000) / 1000 - Math.trunc(a * 1000) / 1000) * velocity[0]));
-
-        setBall(
-            new THREE.Vector3(
-                ballPos.x - ((Math.trunc(tick * 1000) / 1000 - Math.trunc(a * 1000) / 1000) * velocity[0]),
-                ballPos.y - ((Math.trunc(tick * 1000) / 1000 - Math.trunc(a * 1000) / 1000) * velocity[1]),
-                0
-            )
-        );
-        // setBall(ballPos[1] - ((Math.trunc(tick * 1000) / 1000 - Math.trunc(a * 1000) / 1000) * velocity[1]));
-        // console.log(a);
-        
-        //
-
+        ball.current.position.x += ((a - tick) * velocity[0]);
+        ball.current.position.y += ((a - tick) * velocity[1]);
+        //console.log(a - tick);
         tick = a;
     });
+
     return (
-        <>
-            <ambientLight />
-            <pointLight position={[10, 10, 10]} />
-            <CPU position={cpuPos} />
-            <Player position={playerPos} />
-            <Ball position={ballPos} />
-        </>
+        <mesh
+            ref={ball}
+            scale={1}
+            position={[0, 0, 0]}>
+            <circleGeometry args={[0.15, 32, 1]} />
+            <meshStandardMaterial color={'orange'} />
+        </mesh>
     )
 }
+
