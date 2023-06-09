@@ -28,6 +28,11 @@ export const usePlayerStore = create<PosType>()((set) => ({
   change: (by) => set((state) => ({ paddlePos:  by})),
 }))
 
+export const sizes = {
+    width: 640,
+    height: 480,
+}
+
 //const useScoreStore = create<Score>()((set) => ({
 //  cpu: 0,
 //  player: 0,

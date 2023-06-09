@@ -1,40 +1,25 @@
 'use client';
 
-import * as THREE from 'three'
-import React, { useRef, useState } from 'react'
-import { Canvas, useFrame, ThreeElements } from '@react-three/fiber'
-
-import { Threejs } from './game';
+import React from 'react';
+import { Canvas } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
+import { Comp, Player, Ball } from './game';
+import { sizes } from './store';
 
 export default function Pong() {
     return (
       <>
         <div className='w-[640px] h-[480px] '>
           <Canvas>
-            <Threejs/>
+            <PerspectiveCamera makeDefault fov={75} aspect={sizes.width / sizes.height} position={[0, 0, 5]} />
+            <ambientLight />
+            <pointLight position={[10, 10, 10]} />
+            <Comp />
+            <Player />
+            <Ball />
           </Canvas>
         </div>
       </>
   )
 }
 
-function CapturePixels() {
-    useFrame(({ gl, scene, camera }) => {
-        gl.render(scene, camera)
-        const target = gl.getRenderTarget();
-        if (target != null) {
-            const pixels = new Uint8Array(
-                target.width * target.height
-            );
-            gl.readRenderTargetPixels(
-                  target,
-                  0,
-                  0,
-                  target.width,
-                  target.height,
-                  pixels
-            );
-            console.log(pixels);
-        }
-    }, 1)
-}
