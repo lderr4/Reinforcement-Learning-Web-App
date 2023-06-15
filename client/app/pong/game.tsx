@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree, ThreeElements } from '@react-three/fiber';
 
-import { useCPUStore, usePlayerStore, sizes } from "./store";
+import { useCPUStore, usePlayerStore, useScoreStore, ScoreType, sizes } from "./store";
 
 export function Comp() {
+    const store = useCPUStore();
     const mesh = useRef<THREE.Mesh>(null!);
     let tick = 0;
 
@@ -17,6 +18,7 @@ export function Comp() {
 
         //const a = clock.getElapsedTime();
         //tick = a;
+        store.change(mesh.current.position);
     });
 
     return (
@@ -55,69 +57,90 @@ export function Player() {
 }
 
 export function Ball() {
+    const cpuPoint = useScoreStore((state) => state.cpuPoint);
+    const playerPoint = useScoreStore((state) => state.playerPoint);
     const ball = useRef<THREE.Mesh>(null!);
     const bRadius = 0.15;
-    const velocity = [0, 0];
-    let angle = Math.random() * Math.PI * 2;
-    let speed = 0.06;
+    //let angle = Math.random() * Math.PI * 2;
+    let velocity = [0, 0];
+    let angle = Math.PI;
+    let speed = 0.004;
     velocity[0] = Math.cos(angle) * speed;
     velocity[1] = Math.sin(angle) * speed;
+
     const cpuPosRef = useRef(useCPUStore.getState().paddlePos);
     const playerPosRef = useRef(usePlayerStore.getState().paddlePos);
+    //const cpuScoreRef = useRef(useScoreStore.getState().cpuScore);
+    //const playerScoreRef = useRef(useScoreStore.getState().playerScore);
     // Connect to the store on mount, disconnect on unmount, catch state-changes in a reference
     useEffect(() => useCPUStore.subscribe(state => (cpuPosRef.current = state.paddlePos)), []);
     useEffect(() => usePlayerStore.subscribe(state => (playerPosRef.current = state.paddlePos)), []);
+    //useEffect(() => useScoreStore.subscribe(state => (cpuScoreRef.current = state.cpuScore)), []);
+    //useEffect(() => useScoreStore.subscribe(state => (playerScoreRef.current = state.playerScore)), []);
 
     // reset when player scores
     //useEffect(() => {}. [points]);
 
-    //var vFOV = THREE.MathUtils.degToRad( 75 ); // convert vertical fov to radians
-    //var height = 2 * Math.tan( vFOV / 2 ) * 5; // visible height
-    //var width = height * (sizes.width / sizes.height); // visible width
+    // cache fov info and bounce angle info
     const vFOV = useMemo(() => THREE.MathUtils.degToRad( 75 ), [])
     const height = useMemo(() => 2 * Math.tan( vFOV / 2 ) * 5, [vFOV])
     const width = useMemo(() => height * (sizes.width / sizes.height), [height])
+    const pAngleRange = useMemo(() => (2 * Math.PI) / 3, []);
+    const pAngleOffset = useMemo(() => (4 * Math.PI) / 3, []);
+    const cAngleRange = useMemo(() => Math.PI / 3, []);
+    const cAngleOffset = useMemo(() => Math.PI * 2, []);
+
     let tick = 0;
     useFrame(({ clock }) => {
         const a = Math.trunc(clock.getElapsedTime() * 1000);
         // player paddle
-        if (ball.current.position.x + bRadius >= playerPosRef.current.x - 0.1 &&
+        if (ball.current.position.x + bRadius >= playerPosRef.current.x - 0.15 &&
             ball.current.position.y - bRadius / 2 < playerPosRef.current.y + 0.5 &&
             ball.current.position.y + bRadius / 2 > playerPosRef.current.y - 0.5 &&
             velocity[0] > 0) {
+
             console.log("player paddle");
-
-            velocity[0] = velocity[0] * -1;
-            //speed += 0.004
-            //velocity[1] = velocity[1] + 1.05;
-            //angle = Math.atan2(velocity[1],velocity[0]);
-            //velocity[0] = Math.cos(angle) * speed * (a - tick);
-            //angle = (4 * Math.PI)/3 - (ball.current.position.y - playerPosRef.current.y + 0.5)
-            //velocity[1] =  Math.sin(((ball.current.position.y - playerPosRef.current.y) * 0.004) + angle) * speed * (a - tick);
-            console.log(angle);
-            console.log(velocity);
-        }
-        // cpu paddle
-        if (ball.current.position.x - bRadius <= cpuPosRef.current.x + 0.1 &&
+            speed = speed * 1.01;
+            angle = ((pAngleOffset - ((ball.current.position.y - playerPosRef.current.y + 0.5) * pAngleRange)));
+            velocity[0] = Math.cos(angle) * speed;
+            velocity[1] = Math.sin(angle) * speed;
+        } else if (ball.current.position.x - bRadius <= cpuPosRef.current.x + 0.15 &&
             ball.current.position.y - bRadius < cpuPosRef.current.y + 0.5 &&
-            ball.current.position.y + bRadius > cpuPosRef.current.y - 0.5) {
-            console.log("cpu paddle");
-            velocity[0] = velocity[0] * -1.05;
-            //velocity[1] = velocity[1] + 1.05 *  (ball.current.position.y - cpuPosRef.current.y) * 0.004;
-        }
-        // walls
-        if (ball.current.position.y + bRadius > height / 2 || ball.current.position.y - bRadius < (height / 2) * -1) {
-            velocity[1] = velocity[1] * -1;
-        } else if (ball.current.position.x > 5.15) {
-            console.log("cpu scores!");
-            velocity[0] = velocity[0] * -1; // for testing
-        } else if (ball.current.position.x < -5.15) {
-            console.log("player scores!");
-            velocity[0] = velocity[0] * -1; // for testing
-        }
+            ball.current.position.y + bRadius > cpuPosRef.current.y - 0.5 && 
+            velocity[0] < 0) {
 
-        ball.current.position.x += velocity[0];
-        ball.current.position.y += velocity[1];
+            console.log("cpu paddle");
+            speed = speed * 1.01;
+            //velocity[1] = velocity[1] + 1.05 *  (ball.current.position.y - cpuPosRef.current.y) * 0.004;
+            angle = (cAngleOffset + (ball.current.position.y - cpuPosRef.current.y) * cAngleRange);
+            velocity[0] = Math.cos(angle) * speed;
+            velocity[1] = Math.sin(angle) * speed;
+        } else if (ball.current.position.y + bRadius > height / 2 || ball.current.position.y - bRadius < (height / 2) * -1) {
+            velocity[1] = velocity[1] * -1;
+        } else if (ball.current.position.x > width/2 && velocity[0] > 0) {
+            console.log("cpu scores!");
+            cpuPoint();
+            angle = Math.PI;
+            speed = 0.004;
+            //let angle = Math.random() * Math.PI * 2;
+            velocity[0] = Math.cos(angle) * speed;
+            velocity[1] = Math.sin(angle) * speed;
+            ball.current.position.set(0,0,0)
+            
+        } else if (ball.current.position.x < 0-(width/2) && velocity[0] < 0) {
+            console.log("player scores!");
+            playerPoint();
+            angle = Math.PI;
+            speed = 0.004;
+            //let angle = Math.random() * Math.PI * 2;
+            velocity[0] = Math.cos(angle) * speed;
+            velocity[1] = Math.sin(angle) * speed;
+            ball.current.position.set(0,0,0)
+
+        } 
+        ball.current.position.x += velocity[0] * (a - tick);
+        ball.current.position.y += velocity[1] * (a - tick);
+        //ball.current.updateMatrixWorld();
         //console.log(a - tick);
 
         tick = a;

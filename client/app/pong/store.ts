@@ -11,21 +11,28 @@ export interface PosType {
   change: (by: THREE.Vector3) => void
 }
 
-interface Score {
-  cpu: number
-  player: number
+export interface ScoreType {
+  cpuScore: number
+  playerScore: number
   cpuPoint: () => void
   playerPoint: () => void
 }
 
 export const useCPUStore = create<PosType>()((set) => ({
-  paddlePos: new THREE.Vector3(-5, 0, 0),
+  paddlePos: new THREE.Vector3(-4.75, 0, 0),
   change: (by) => set((state) => ({ paddlePos:  by})),
 }))
 
 export const usePlayerStore = create<PosType>()((set) => ({
-  paddlePos: new THREE.Vector3(5, 0, 0),
+  paddlePos: new THREE.Vector3(4.75, 0, 0),
   change: (by) => set((state) => ({ paddlePos:  by})),
+}))
+
+export const useScoreStore = create<ScoreType>()((set) => ({
+  cpuScore: 0,
+  playerScore: 0,
+  cpuPoint: () => set((state) => ( { cpuScore: state.cpuScore + 1 })),
+  playerPoint: () => set((state) => ( { playerScore: state.playerScore + 1 })),
 }))
 
 export const sizes = {
