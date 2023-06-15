@@ -56,6 +56,13 @@ class PongEnv(gym.Env):
 
         self.ball_vel = np.random.uniform(2, 4, size=2).tolist()
 
+        self.ball_speed = 0.004
+        self.ball_angle = np.random.rand(1,1)
+        self.ball_angle = self.ball_angle[0] * np.pi 
+        self.ball_vel[0] = np.cos(self.angle) * self.ball_speed;
+        self.ball_vel[1] = np.sin(self.angle) * self.ball_speed;
+
+
         cpu_speed = 0.9 * self.ball_vel[1]
         self.cpu = PongCPU(self.screen_width, self.screen_height,
                            self.paddle_height, cpu_speed)
@@ -96,12 +103,25 @@ class PongEnv(gym.Env):
         if self.ball_pos[1] <= 0 + self.ball_radius or self.ball_pos[1] >= self.screen_height - self.ball_radius:
             self.ball_vel[1] = -self.ball_vel[1]
 
+        # velocity[0] = velocity[0] * -1;
+
         # Check for collision with paddle
         if self.ball_pos[0] <= self.paddle_pos[0] + self.paddle_width and self.paddle_pos[1] <= self.ball_pos[1] <= self.paddle_pos[1] + self.paddle_height:
-            self.ball_vel[0] = -self.ball_vel[0]
+            self.speed = self.speed * 1.01
+            self.angle = ((np.pi * 2) + (self.paddle / (self.ball_pos[1] - self.paddle_pos[1])) * (np.pi / 3));
+            # angle = (cAngleOffset + (ball.current.position.y - cpuPosRef.current.y) * cAngleRange);
+            self.ball_vel[0] = np.cos(self.angle) * self.speed;
+            self.ball_vel[1] = np.sin(self.angle) * self.speed;
 
         elif self.ball_pos[0] >= cpu_x and cpu_y <= self.ball_pos[1] <= cpu_y + self.paddle_height:
-            self.ball_vel[0] = -self.ball_vel[0]
+            self.speed = self.speed * 1.01
+            self.angle = (((4 * np.pi) / 3) - (((self.ball_pos[1] - cpu_y) / paddle_height) * ((2 * np.pi) / 3)));
+            self.ball_vel[0] = np.cos(self.angle) * self.speed;
+            self.ball_vel[1] = np.sin(self.angle) * self.speed;
+
+        # velocity[0] = velocity[0] * -1.05;
+        # //velocity[1] = velocity[1] + 1.05 *  (ball.current.position.y - cpuPosRef.current.y) * 0.004;
+
 
         # Check for ball out of bounds
         if self.ball_pos[0] <= 0:

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+tmux neww -c ~/personal/projects/RL-Web-App/client 
+tmux neww -c ~/personal/projects/RL-Web-App/websockets 
+tmux neww -c ~/personal/projects/RL-Web-App/websockets

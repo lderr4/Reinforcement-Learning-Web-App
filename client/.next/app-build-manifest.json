@@ -1,0 +1,29 @@
+{
+  "pages": {
+    "/page": [
+      "static/chunks/webpack-b1c2b4714b70ba8d.js",
+      "static/chunks/2443530c-457526a93a49c92a.js",
+      "static/chunks/139-5c5129e677a27060.js",
+      "static/chunks/main-app-f0adaee74033b9ec.js",
+      "static/chunks/414-371f24b03d18c6ae.js",
+      "static/chunks/app/page-20814ed811c03f6e.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-b1c2b4714b70ba8d.js",
+      "static/chunks/2443530c-457526a93a49c92a.js",
+      "static/chunks/139-5c5129e677a27060.js",
+      "static/chunks/main-app-f0adaee74033b9ec.js",
+      "static/css/ab7042528dd5d2f8.css",
+      "static/chunks/app/layout-e63092a899776557.js"
+    ],
+    "/pong/page": [
+      "static/chunks/webpack-b1c2b4714b70ba8d.js",
+      "static/chunks/2443530c-457526a93a49c92a.js",
+      "static/chunks/139-5c5129e677a27060.js",
+      "static/chunks/main-app-f0adaee74033b9ec.js",
+      "static/chunks/05ee798f-f156f8e3b8d51eeb.js",
+      "static/chunks/160-6797a3e7473d6b0f.js",
+      "static/chunks/app/pong/page-240dba5f20b9a474.js"
+    ]
+  }
+}
