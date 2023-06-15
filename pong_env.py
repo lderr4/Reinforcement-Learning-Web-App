@@ -56,7 +56,9 @@ class PongEnv(gym.Env):
 
         self.ball_vel = np.random.uniform(2, 4, size=2).tolist()
 
+        
         self.ball_speed = 0.004
+        # numpy lokey weird
         self.ball_angle = np.random.rand(1,1)
         self.ball_angle = self.ball_angle[0] * np.pi 
         self.ball_vel[0] = np.cos(self.angle) * self.ball_speed;
@@ -71,6 +73,13 @@ class PongEnv(gym.Env):
         # Reset the game state
         self.ball_pos = [self.screen_width // 2, self.screen_height // 2]
         self.ball_vel = np.random.uniform(2, 4, size=2).tolist()
+
+        self.ball_speed = 0.004
+        self.ball_angle = np.random.rand(1,1)
+        self.ball_angle = self.ball_angle[0] * np.pi 
+        self.ball_vel[0] = np.cos(self.angle) * self.ball_speed;
+        self.ball_vel[1] = np.sin(self.angle) * self.ball_speed;
+
         self.paddle_pos = [10, self.screen_height // 2]
         self.screen.fill((0, 0, 0))
         pygame.display.flip()
@@ -187,3 +196,4 @@ sys.exit()
 
 
 # In[ ]:
+
